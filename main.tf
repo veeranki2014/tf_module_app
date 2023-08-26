@@ -22,7 +22,7 @@ resource "aws_iam_policy" "policy" {
   })
 }
 # IAM Role
-resource "aws_iam_role" "test_role" {
+resource "aws_iam_role" "role" {
   name = "${var.component}-${var.env}-ec2-role"
 
   assume_role_policy = jsonencode({
@@ -46,7 +46,13 @@ resource "aws_iam_role" "test_role" {
 #Instance Profile
 resource "aws_iam_instance_profile" "test_profile" {
   name = "${var.component}-${var.env}-ec2-role"
-  role = aws_iam_role.test_role.name
+  role = aws_iam_role.role.name
+}
+
+#IAM Role Policy Attachement
+resource "aws_iam_role_policy_attachment" "policy-attach" {
+  role       = aws_iam_role.role.name
+  policy_arn = aws_iam_policy.policy.arn
 }
 # Route53 (DNS)
 resource "aws_route53_record" "main" {
