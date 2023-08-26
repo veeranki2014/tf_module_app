@@ -16,7 +16,7 @@ resource "aws_iam_policy" "policy" {
           "ssm:GetParameters",
           "ssm:GetParameter"
         ],
-        "Resource": "arn:aws:ssm:us-east-1:155405255921:parameter/roboshop.${var.env}.frontend.${var.component}.*"
+        "Resource": "arn:aws:ssm:us-east-1:155405255921:parameter/roboshop.${var.env}.${var.component}.*"
       }
     ]
   })
