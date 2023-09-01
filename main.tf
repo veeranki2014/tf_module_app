@@ -95,9 +95,10 @@ resource "aws_instance" "instance" {
   vpc_security_group_ids = [aws_security_group.main.id]
   iam_instance_profile   = aws_iam_instance_profile.instance_profile.name
 
-  tags = {
+  tags = merge({
     Name = "${var.component}-${var.env}-ec2"
-  }
+    },
+    var.tags )
 }
 # null_resource for Ansible
 resource "null_resource" "ansible" {
@@ -111,6 +112,7 @@ resource "null_resource" "ansible" {
     }
     inline                = [
       "sudo labauto ansible",
+      "sudo set-host -skip-apply ${var.component}",
       "ansible-pull -i localhost, -U https://github.com/veeranki2014/roboshop_ansible main.yml -e env=${var.env} -e role_name=${var.component}"
     ]
   }
