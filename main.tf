@@ -95,7 +95,7 @@ resource "aws_instance" "instance" {
   vpc_security_group_ids = [aws_security_group.main.id]
   iam_instance_profile   = aws_iam_instance_profile.instance_profile.name
 
-  tags = merge({
+  tags = merge ({
     Name = "${var.component}-${var.env}-ec2"
     },
     var.tags )
