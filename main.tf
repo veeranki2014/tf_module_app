@@ -50,11 +50,11 @@ resource "aws_launch_template" "main" {
     tags = merge ({ Name = "${var.component}-${var.env}", Monitor = "yes"}, var.tags )
   }
 
-  user_data     = templatefile("${path.module}/userdata.sh", {
+  user_data     = filebase64(templatefile("${path.module}/userdata.sh", {
     env          = var.env
     component    = var.component
     #hostnames   = {"dev":"devhost","test":"testhost","prod":"prodhost"}
-  })
+  }))
 
   block_device_mappings {
     device_name = "/dev/sda1"
