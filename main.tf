@@ -1,60 +1,5 @@
-## IAM Policy
-#resource "aws_iam_policy" "policy" {
-#  name        = "${var.component}-${var.env}-ssm-pm-policy"
-#  path        = "/"
-#  description = "${var.component}-${var.env}-ssm-pm-policy"
-#
-#  policy = jsonencode({
-#    "Version": "2012-10-17",
-#    "Statement": [
-#      {
-#        "Sid": "VisualEditor0",
-#        "Effect": "Allow",
-#        "Action": [
-#          "ssm:GetParameterHistory",
-#          "ssm:GetParametersByPath",
-#          "ssm:GetParameters",
-#          "ssm:GetParameter"
-#        ],
-#        "Resource": "arn:aws:ssm:us-east-1:155405255921:parameter/roboshop.${var.env}.${var.component}.*"
-#      }
-#    ]
-#  })
-#}
-## IAM Role
-#resource "aws_iam_role" "role" {
-#  name = "${var.component}-${var.env}-ec2-role"
-#
-#  assume_role_policy = jsonencode({
-#    Version = "2012-10-17"
-#    Statement = [
-#      {
-#        Action = "sts:AssumeRole"
-#        Effect = "Allow"
-#        Sid    = ""
-#        Principal = {
-#          Service = "ec2.amazonaws.com"
-#        }
-#      },
-#    ]
-#  })
-#
-#  tags = {
-#    tag-key = "${var.component}-${var.env}-ec2-role"
-#  }
-#}
-#
-##Instance Profile
-#resource "aws_iam_instance_profile" "instance_profile" {
-#  name = "${var.component}-${var.env}-ec2-role"
-#  role = aws_iam_role.role.name
-#}
-#
-##IAM Role Policy Attachement
-#resource "aws_iam_role_policy_attachment" "policy-attach" {
-#  role       = aws_iam_role.role.name
-#  policy_arn = aws_iam_policy.policy.arn
-#}
+
+
 ## Route53 (DNS)
 #resource "aws_route53_record" "main" {
 #  zone_id                   = "Z05332201VBHF9VM3Q9N5"
@@ -63,31 +8,81 @@
 #  ttl                       = 30
 #  records                   = [aws_instance.instance.private_ip]
 #}
-## Security Groups
-#resource "aws_security_group" "main" {
-#  name        = "${var.component}-${var.env}-sg"
-#  description = "${var.component}-${var.env}-sg"
-#
-#  ingress {
-#    from_port   = 0
-#    to_port     = 0
-#    protocol    = "-1"
-#    cidr_blocks = ["0.0.0.0/0"]
-#
-#  }
-#
-#  egress {
-#    from_port   = 0
-#    to_port     = 0
-#    protocol    = "-1"
-#    cidr_blocks = ["0.0.0.0/0"]
-#  }
-#
-#  tags = {
-#    Name = "${var.component}-${var.env}-sg"
-#  }
-#}
-#
+
+
+# Security Groups
+resource "aws_security_group" "main" {
+  name        = "${var.component}-${var.env}-sg"
+  description = "${var.component}-${var.env}-sg"
+
+  ingress {
+    from_port   = var.app_port
+    to_port     = var.app_port
+    protocol    = "-1"
+    cidr_blocks = var.sg_subnets_cidr
+
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.component}-${var.env}-sg"
+  }
+}
+
+### Launch_template for Auto Scaling Group ####
+resource "aws_launch_template" "main" {
+  name = "${var.component}-${var.env}"
+  iam_instance_profile {
+    name = aws_iam_instance_profile.instance_profile.name
+  }
+  image_id = data.aws_ami.main.id
+  instance_type = var.instance_type
+  vpc_security_group_ids = [ aws_security_group.main.id ]
+
+  tag_specifications {
+    resource_type = "instance"
+    tags = merge ({ Name = "${var.component}-${var.env}", Monitor = "yes"}, var.tags )
+  }
+
+  user_data     = templatefile("${path.module}/userdata.sh", {
+    env          = var.env
+    component    = var.component
+    #hostnames   = {"dev":"devhost","test":"testhost","prod":"prodhost"}
+  })
+
+  root_block_device {
+    encrypted = true
+    kms_key_id = var.kms_key_id
+  }
+}
+
+resource "aws_autoscaling_group" "main" {
+  #availability_zones = ["us-east-1a"] ##we provide the subnet Group
+  desired_capacity   = var.desired_capacity
+  max_size           = var.max_size
+  min_size           = var.min_size
+
+  launch_template {
+    id      = aws_launch_template.main.id
+    version = "$Latest"
+  }
+}
+
+
+
+
+
+
+
+
+
+
 ## EC2
 #resource "aws_instance" "instance" {
 #  instance_type          = "t2.micro"
@@ -118,39 +113,6 @@
 #  }
 #}
 
-# Security Groups for testing purpose
-resource "aws_security_group" "main" {
-  name        = "${var.component}-${var.env}-sg"
-  description = "${var.component}-${var.env}-sg"
-  vpc_id      = var.vpc_id
 
-  ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
 
-  }
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "${var.component}-${var.env}-sg"
-  }
-}
-
-resource "aws_instance" "test" {
-  ami                       = data.aws_ami.main.id
-  instance_type             = "t3.micro"
-  vpc_security_group_ids    = [aws_security_group.main.id]
-  subnet_id                 = var.subnet_id
-
-  tags = {
-    Name = var.component
-  }
-}
