@@ -69,9 +69,11 @@ resource "aws_launch_template" "main" {
 
 resource "aws_autoscaling_group" "main" {
   #availability_zones = ["us-east-1a"] ##we provide the subnet Group
+  vpc_zone_identifier = var.subnets_ids
   desired_capacity   = var.desired_capacity
   max_size           = var.max_size
   min_size           = var.min_size
+
 
   launch_template {
     id      = aws_launch_template.main.id
