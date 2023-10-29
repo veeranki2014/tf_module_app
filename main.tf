@@ -24,6 +24,14 @@ resource "aws_security_group" "main" {
 
   }
 
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = var.allow_ssh_cidr
+
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
