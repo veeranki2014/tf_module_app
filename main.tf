@@ -80,22 +80,23 @@ resource "aws_lb_listener_rule" "main" {
 
 ### Launch_template for Auto Scaling Group ####
 resource "aws_launch_template" "main" {
-  name = "${var.component}-${var.env}"
+  name                      = "${var.component}-${var.env}"
+
   iam_instance_profile {
-    name = aws_iam_instance_profile.instance_profile.name
+    name                    = aws_iam_instance_profile.instance_profile.name
   }
-  image_id = data.aws_ami.main.id
-  instance_type = var.instance_type
-  vpc_security_group_ids = [ aws_security_group.main.id ]
+  image_id                  = data.aws_ami.main.id
+  instance_type             = var.instance_type
+  vpc_security_group_ids    = [ aws_security_group.main.id ]
 
   tag_specifications {
-    resource_type = "instance"
-    tags = merge ({ Name = "${var.component}-${var.env}", Monitor = "yes"}, var.tags )
+    resource_type           = "instance"
+    tags                    = merge ({ Name = "${var.component}-${var.env}", Monitor = "yes"}, var.tags )
   }
 
-  user_data     = base64encode(templatefile("${path.module}/userdata.sh", {
-    env          = var.env
-    component    = var.component
+  user_data                 = base64encode(templatefile("${path.module}/userdata.sh", {
+    env                     = var.env
+    component               = var.component
     #hostnames   = {"dev":"devhost","test":"testhost","prod":"prodhost"}
   }))
 
@@ -116,7 +117,7 @@ resource "aws_autoscaling_group" "main" {
   desired_capacity   = var.desired_capacity
   max_size           = var.max_size
   min_size           = var.min_size
-  target_group_arns  = [ aws_lb_target_group.main.arn ]
+  target_group_arns  = [aws_lb_target_group.main.arn]
 
 
   launch_template {
