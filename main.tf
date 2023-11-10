@@ -47,6 +47,7 @@ resource "aws_security_group" "main" {
 ### ALB Target Group
 resource "aws_lb_target_group" "main" {
   name     = "${var.component}-${var.env}-tg"
+  deregistration_delay = 30
   port     = var.app_port
   protocol = "HTTP"
   vpc_id   = var.vpc_id
